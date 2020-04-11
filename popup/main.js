@@ -25,6 +25,10 @@ const renderVUMeter = () => {
   // Clear current contents
   canvas.clearRect(0, 0, canvas_element.width, canvas_element.height);
 
+  // Render Threshold bar
+  canvas.fillStyle = '#910000';  
+  canvas.fillRect(0, 0, config.threshold, canvas_element.height);
+
   // VU Meter color changes based on if the video is currently sped up
   if (isSpedUp) {
     canvas.fillStyle = '#00CC00';
@@ -33,11 +37,9 @@ const renderVUMeter = () => {
   }
 
   // Render VU Meter bar
-  canvas.fillRect(30, 0, Math.min(volume + 1, canvas_element.width - 60), canvas_element.height);
+  canvas.fillRect(0, 0, 2, canvas_element.height);
 
-  // Render Threshold bar
-  canvas.fillStyle = '#FF0000';
-  canvas.fillRect(30 + config.threshold, 0, 1, canvas_element.height);
+  canvas.fillRect(0, 0, Math.min(volume + 1, canvas_element.width - 60), canvas_element.height);
 
   // Loop render via animation frames
   requestAnimationFrame(renderVUMeter);
@@ -65,11 +67,13 @@ const requestConfig = () => {
 }
 // Update the page input elements to reflect the current config
 const updatePageInputs = () => {
-  document.getElementById('enable').checked = config.enabled;
+  document.getElementById('enable-toggle').checked = config.enabled;
   document.getElementById('slider').value = config.threshold;
   document.getElementById('samples').value = config.samples_threshold;
   document.getElementById('playback').value = config.playback_speed;
   document.getElementById('silence').value = config.silence_speed;
+  document.getElementById('playback-val').value = config.playback_speed + "x";
+  document.getElementById('silence-val').value = config.silence_speed + "x";
 }
 
 // Listen for messages from the page to update our config
@@ -86,7 +90,7 @@ chrome.runtime.onMessage.addListener(msg => {
 });
 
 // Listen for changes on input/setting elements
-document.getElementById('enable').addEventListener('click', event => {
+document.getElementById('enable-toggle').addEventListener('click', event => {
   config.enabled = event.target.checked;
   sendConfig();
 
@@ -106,10 +110,12 @@ document.getElementById('samples').addEventListener('input', event => {
 })
 document.getElementById('playback').addEventListener('input', event => {
   config.playback_speed = Number(event.target.value);
+  document.getElementById('playback-val').value = event.target.value + "x";
   sendConfig();
 })
 document.getElementById('silence').addEventListener('input', event => {
   config.silence_speed = Number(event.target.value);
+  document.getElementById('silence-val').value = event.target.value + "x";
   sendConfig();
 })
 

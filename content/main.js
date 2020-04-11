@@ -31,8 +31,8 @@ const disableExtension = () => {
 // Create audio context to source element
 const attachAnalyser = element => {
   debug('Attaching analyser');
-  const audio = new AudioContext()
-
+  const audio = new AudioContext();
+  audio.crossOrigin = 'anonymous';
   // Create Context components
   const analyser = audio.createAnalyser();
   const source = audio.createMediaElementSource(element);
@@ -63,11 +63,13 @@ const prepareExtension = () => {
   // Get video or audio element from page
   let element;
   if (document.getElementsByTagName('video').length) {
-    enableExtension();
     element = document.getElementsByTagName('video')[0];
+    element.crossOrigin = 'anonymous';
+    enableExtension();
   } else if (document.getElementsByTagName('audio').length) {
     enableExtension();
     element = document.getElementsByTagName('audio')[0];
+    element.crossOrigin = 'anonymous';
   } else {
     // No audio or video existent on page - disable extension
     debug('No source found');
@@ -92,9 +94,8 @@ const prepareExtension = () => {
       [ analyser, gain, audio ] = attachAnalyser(element);
       freq_volume = new Float32Array(analyser.fftSize);
     }
-
     analyser.getFloatTimeDomainData(freq_volume);
-  
+
     // Compute volume via peak instantaneous power over the interval
     let peakInstantaneousPower = 0;
     for (let i = 0; i < freq_volume.length; i++) {
@@ -102,7 +103,8 @@ const prepareExtension = () => {
       peakInstantaneousPower = Math.max(power, peakInstantaneousPower);
     }
     const volume = (500 * peakInstantaneousPower);
-  
+
+    debug('Volume');
     // Check volume
     if (volume < THRESHOLD && !element.paused) {
       samplesUnderThreshold++;

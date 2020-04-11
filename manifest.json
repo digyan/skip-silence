@@ -4,7 +4,7 @@
   "version": "1.0",
 
   "description": "Skip silent parts in videos and audio files",
-  "homepage_url": "https://github.com/vantezzen/skip-silence",
+  "homepage_url": "https://github.com/exradr/skip-silence",
   "icons": {
       "32": "icons/icon-32.png",
       "48": "icons/icon-48.png"
@@ -28,7 +28,11 @@
 
   "page_action": {
     "default_icon": {
-      "32": "icons/icon-32.png"
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "64": "icons/icon-64.png",
+      "128": "icons/icon-128.png",
+      "500": "icons/icon-500.png"
     },
     "default_title": "Skip Silence",
     "default_popup": "popup/index.html"
