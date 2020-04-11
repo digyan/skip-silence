@@ -1,7 +1,7 @@
 <p align="center">
     <img src="icons/icon-500.png" height="300"><br />
     <a href="https://chrome.google.com/webstore/detail/skip-silence/fhdmkhbefcbhakffdihhceaklaigdllh">
-        <img src="icons/chrome.png" alt="Availible on chrome web store" width="150">
+        <img src="docs/chrome.png" alt="Availible on chrome web store" width="150">
     </a>
 </p>
 
@@ -11,7 +11,7 @@ It is highly inspired by CaryKH's [automatic on-the-fly video editing tool](http
 The extension works with most websites that use HTML5 `audio` and `video` elements (like YouTube).
 
 ## Demo
-<img src="demo.gif" height="300">
+<img src="docs/demo.gif" height="300">
 
 (Video used: Unedited part of <https://youtu.be/DQ8orIurGxw?t=234>)
 
@@ -25,11 +25,11 @@ You can also install this extension on Chrome by downloading the source from Git
 ## Usage
 When "Skip Silence" detects a compatible element on the current page, its icon in the menubar will be colored.
 
-![Changing icon](images/icon_change.png)
+![Changing icon](docs/icon_change.png)
 
 You can now click on this icon to reveal the settings popup.
 
-![Settings popup](images/popup.png)
+![Settings popup](docs/popup.png)
 
 You can now:
 - Click the big red button to enable and disable "Skip Silence" for the current page
@@ -38,7 +38,7 @@ You can now:
   - The VU Meter will be blue when on normal speed and green when currently in a silent part
   - The red line represents your current volume threshold
 
-![Settings popup when in use](images/popup.gif)
+![Settings popup when in use](docs/popup.gif)
 
 ## Limitations
 - Will only work when the tab is in focus. It will not work if the tab is in the background
