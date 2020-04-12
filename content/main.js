@@ -9,7 +9,7 @@
  */
 // Currently disabled: Log info to page console
 const debug = log => {
-  console.log('[Skip Silence] ' + log);
+  // console.log('[Skip Silence] ' + log);
 }
 
 // Configuration ('server' default values)
@@ -144,13 +144,9 @@ const prepareExtension = () => {
 
   // load config
   chrome.storage.local.get(['config'], function(result) {
-    console.log("check config")
     if (result.config !== undefined) {
-      console.log("got config")
-      console.log(result.config)
       config = result.config;
       if (config.enabled) {
-        console.log("running...")
         chrome.runtime.sendMessage({command: "enable-rt"});
         requestAnimationFrame(run);
       }
