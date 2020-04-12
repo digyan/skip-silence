@@ -9,16 +9,21 @@
  */
 // Currently disabled: Log info to page console
 const debug = log => {
-  // console.log('[Skip Silence] ' + log);
+  console.log('[Skip Silence] ' + log);
 }
 
-// Configuration
-let THRESHOLD = 30;
-let SAMPLES_THRESHOLD = 10;
-let AUDIO_DELAY = 0.08;
-let PLAYBACK_SPEED = 1;
-let SILENCE_SPEED = 3;
-let IS_ENABLED = false;
+// Configuration ('server' default values)
+const CONFIG_DEFAULTS = {
+  threshold: 30,
+  samples_threshold: 10,
+  audio_delay: 0.08,
+  playback_speed: 1,
+  silence_speed: 3,
+  enabled: false,
+  timeSaved: 0,
+}
+let config = Object.assign({}, CONFIG_DEFAULTS);;
+
 
 // Enable or disable browser action for current tab using background script
 const enableExtension = () => {
@@ -38,8 +43,8 @@ const attachAnalyser = element => {
   const source = audio.createMediaElementSource(element);
   const delay = audio.createDelay();
   const gain = audio.createGain();
-
-  delay.delayTime.setValueAtTime(AUDIO_DELAY, audio.currentTime);
+  
+  delay.delayTime.setValueAtTime(config.audio_delay, audio.currentTime);
 
   // Connect components
   source.connect(analyser);
@@ -64,12 +69,10 @@ const prepareExtension = () => {
   let element;
   if (document.getElementsByTagName('video').length) {
     element = document.getElementsByTagName('video')[0];
-    element.crossOrigin = 'anonymous';
     enableExtension();
   } else if (document.getElementsByTagName('audio').length) {
     enableExtension();
     element = document.getElementsByTagName('audio')[0];
-    element.crossOrigin = 'anonymous';
   } else {
     // No audio or video existent on page - disable extension
     debug('No source found');
@@ -85,9 +88,9 @@ const prepareExtension = () => {
   let freq_volume; // Current frequency volume information of source (Float32Array)
   let isSpedUp = false; // Is the source currently sped up?
   let samplesUnderThreshold = 0; // Number of samples we have been under threshold
-
+  let prevTime = 0;
   const run = () => {
-    if (!IS_ENABLED) return;
+    if (!config.enabled) return;
 
     if (!isAnalyserAttached) {
       isAnalyserAttached = true;
@@ -104,17 +107,16 @@ const prepareExtension = () => {
     }
     const volume = (500 * peakInstantaneousPower);
 
-    debug('Volume');
     // Check volume
-    if (volume < THRESHOLD && !element.paused) {
+    if (volume < config.threshold && !element.paused) {
       samplesUnderThreshold++;
   
-      if (!isSpedUp && samplesUnderThreshold >= SAMPLES_THRESHOLD) {
+      if (!isSpedUp && samplesUnderThreshold >= config.samples_threshold) {
         // Speed up video
-        element.playbackRate = SILENCE_SPEED;
+        element.playbackRate = config.silence_speed;
         isSpedUp = true;
-
-        chrome.runtime.sendMessage({ command: 'speed up' }); 
+        prevTime = audio.currentTime;
+        chrome.runtime.sendMessage({ command: 'up' }); 
       }
     } else {
       if (isSpedUp) {
@@ -122,23 +124,38 @@ const prepareExtension = () => {
         // Mute source for short amount of time to improve clipping noises when slowing back down
         // This won't solve the issue completely but seems to help a little
         gain.gain.setValueAtTime(0, audio.currentTime);
-        gain.gain.setValueAtTime(1, audio.currentTime + 1.1 * AUDIO_DELAY);
+        gain.gain.setValueAtTime(1, audio.currentTime + 1.1 * config.audio_delay);
   
-        element.playbackRate = PLAYBACK_SPEED;
+        element.playbackRate = config.playback_speed;
         isSpedUp = false;
-
-        chrome.runtime.sendMessage({ command: 'slow down' }); 
+        let timeSaved = (audio.currentTime - prevTime) * (1/config.playback_speed - 1/config.silence_speed);
+        chrome.runtime.sendMessage({ command: 'down', data: timeSaved }); 
       }
       samplesUnderThreshold = 0;
     }
 
     // Report current volume to popup for VU Meter
-    chrome.runtime.sendMessage({ command: 'volume', data: volume }); 
-  
-    if (IS_ENABLED) {
+    chrome.runtime.sendMessage({ command: 'vol', data: volume }); 
+    
+    if (config.enabled) {
       requestAnimationFrame(run);
     }
   }
+
+  // load config
+  chrome.storage.local.get(['config'], function(result) {
+    console.log("check config")
+    if (result.config !== undefined) {
+      console.log("got config")
+      console.log(result.config)
+      config = result.config;
+      if (config.enabled) {
+        console.log("running...")
+        chrome.runtime.sendMessage({command: "enable-rt"});
+        requestAnimationFrame(run);
+      }
+    }
+  });
 
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -146,38 +163,26 @@ const prepareExtension = () => {
   
     if (msg.command === 'config') {
       // Update source speed based on new config
-      if (!msg.data.enabled && IS_ENABLED) {
+      if (!msg.data.enabled && config.enabled) {
         // Extension has just been disabled - set playback speed back to 1x
         element.playbackRate = 1;
-        debug('Disabled');
-      } else if (msg.data.enabled && !IS_ENABLED) {
+        chrome.runtime.sendMessage({command: "disable-rt"});
+      } else if (msg.data.enabled && !config.enabled) {
         // Extension has just been enabled - start extension
         element.playbackRate = msg.data.playback_speed;
-        IS_ENABLED = true;
+        config.enabled = true;
+        chrome.runtime.sendMessage({command: "enable-rt"});
         run();
-        debug('Enabled');
       } else if (isSpedUp) {
         element.playbackRate = msg.data.silence_speed;
       } else {
         element.playbackRate = msg.data.playback_speed;
       }
-
-      THRESHOLD = msg.data.threshold;
-      SAMPLES_THRESHOLD = msg.data.samples_threshold;
-      AUDIO_DELAY = msg.data.audio_delay;
-      PLAYBACK_SPEED = msg.data.playback_speed;
-      SILENCE_SPEED = msg.data.silence_speed;
-      IS_ENABLED = msg.data.enabled;
+      config = msg.data;
+      chrome.storage.local.set({'config': config});
     } else if (msg.command === 'requestConfig') {
       // Send our current config back to popup
-      sendResponse({
-        threshold: THRESHOLD,
-        samples_threshold: SAMPLES_THRESHOLD,
-        audio_delay: AUDIO_DELAY,
-        playback_speed: PLAYBACK_SPEED,
-        silence_speed: SILENCE_SPEED,
-        enabled: IS_ENABLED,
-      });
+      sendResponse(config);
     }
   })
 }

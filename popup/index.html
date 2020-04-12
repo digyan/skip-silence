@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Skip Silence</title>
-  <link rel="stylesheet" href="onoffswitch.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
+  <header class="flex">
     <h1 class="title">Skip Silence</h1>
     <!-- ENABLE/DISABLE BUTTON -->
     <div class="onoffswitch">
@@ -20,16 +19,23 @@
       </label>
     </div>
   </header>
-  <!-- VU METER -->
-  <canvas id="vu_meter"></canvas>
-
+  <div class="flex">
+    <div>
+      <p id="timesaved-label">Time saved, this video: <span id="timesaved-val">0</span>s</p>
+      <p id="timesaved-label">Time saved, all time: <span id="alltime-timesaved-val">0</span>s</p>
+    </div>
+    <a class="btn" id="reset-btn" >↻</a>
+  </div>
   <!-- SETTINGS -->
   <div class="slidercontainer">
     <label for="slider">Volume Threshold</label>
     <p class="small">
-      If the volume is under the red line, the video is sped up.
+      The video speeds up when the volume is in the red area.
+      Click on the meter below to set the silence threshold.
+      <!-- VU METER -->
     </p>
-    <input type="range" min="0" max="300" value="30" class="slider-red" name="slider" id="slider">
+    <canvas id="vu_meter"></canvas>
+    <!-- <input type="range" min="0" max="300" value="30" class="slider-red" name="slider" id="slider"> -->
   </div>
   <div class="slidercontainer">
     <label for="samples">Sample Threshold</label>

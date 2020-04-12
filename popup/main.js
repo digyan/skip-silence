@@ -8,17 +8,23 @@
  * @license MIT License
  */
 const canvas_element = document.getElementById('vu_meter');
+let canvasScale = canvas_element.width / canvas_element.clientWidth;
 const canvas = canvas_element.getContext('2d');
-let config = {
+const CONFIG_DEFAULTS = { // this is 'client' default values
   threshold: 30,
   samples_threshold: 10,
   audio_delay: 0.08,
   playback_speed: 1,
   silence_speed: 3,
   enabled: false,
-};
+  timeSaved: 0,
+}
+let config = Object.assign({}, CONFIG_DEFAULTS);
 let volume = 0;
 let isSpedUp = false;
+
+const OFFSET = 10;
+const HEIGHT_OFFSET = 40;
 
 // Render VU Meter to canvas element
 const renderVUMeter = () => {
@@ -27,19 +33,19 @@ const renderVUMeter = () => {
 
   // Render Threshold bar
   canvas.fillStyle = '#910000';  
-  canvas.fillRect(0, 0, config.threshold, canvas_element.height);
+  canvas.fillRect(OFFSET, 0, config.threshold, canvas_element.height);
 
   // VU Meter color changes based on if the video is currently sped up
   if (isSpedUp) {
-    canvas.fillStyle = '#00CC00';
+    canvas.fillStyle = '#f52a2a';
   } else {
     canvas.fillStyle = '#00CCFF';
   }
 
   // Render VU Meter bar
-  canvas.fillRect(0, 0, 2, canvas_element.height);
+  canvas.fillRect(0, 0, OFFSET, canvas_element.height);
 
-  canvas.fillRect(0, 0, Math.min(volume + 1, canvas_element.width - 60), canvas_element.height);
+  canvas.fillRect(OFFSET, 0, Math.min(volume, canvas_element.width - OFFSET), canvas_element.height-HEIGHT_OFFSET);
 
   // Loop render via animation frames
   requestAnimationFrame(renderVUMeter);
@@ -65,13 +71,29 @@ const requestConfig = () => {
     });
   });
 }
+
+// Convert seconds to HH:MM:SS https://stackoverflow.com/a/34841026
+var toHHMMSS = (secs) => {
+  var sec_num = parseInt(secs, 10)
+  var hours   = Math.floor(sec_num / 3600)
+  var minutes = Math.floor(sec_num / 60) % 60
+  var seconds = sec_num % 60
+
+  return [hours,minutes,seconds]
+      .map(v => v < 10 ? "0" + v : v)
+      .filter((v,i) => v !== "00" || i > 0)
+      .join(":")
+}
+
+let timeSaved = 0;
 // Update the page input elements to reflect the current config
 const updatePageInputs = () => {
   document.getElementById('enable-toggle').checked = config.enabled;
-  document.getElementById('slider').value = config.threshold;
   document.getElementById('samples').value = config.samples_threshold;
   document.getElementById('playback').value = config.playback_speed;
   document.getElementById('silence').value = config.silence_speed;
+  document.getElementById('timesaved-val').innerHTML = toHHMMSS(timeSaved);
+  document.getElementById('alltime-timesaved-val').innerHTML = toHHMMSS(config.timeSaved);
   document.getElementById('playback-val').value = config.playback_speed + "x";
   document.getElementById('silence-val').value = config.silence_speed + "x";
 }
@@ -80,12 +102,16 @@ const updatePageInputs = () => {
 chrome.runtime.onMessage.addListener(msg => {
   if (!msg.command) return;
 
-  if (msg.command === 'volume') {
+  if (msg.command === 'vol') {
     volume = msg.data;
-  } else if (msg.command === 'speed up') {
+  } else if (msg.command === 'up') {
     isSpedUp = true;
-  } else if (msg.command === 'slow down') {
+  } else if (msg.command === 'down') {
     isSpedUp = false;
+    timeSaved += msg.data;
+    config.timeSaved += msg.data;
+    document.getElementById('timesaved-val').innerHTML = toHHMMSS(timeSaved);
+    document.getElementById('alltime-timesaved-val').innerHTML = toHHMMSS(config.timeSaved);
   }
 });
 
@@ -99,25 +125,43 @@ document.getElementById('enable-toggle').addEventListener('click', event => {
     volume = 0;
     isSpedUp = false;
   }
-})
-document.getElementById('slider').addEventListener('input', event => {
-  config.threshold = Number(event.target.value);
-  sendConfig();
-})
+});
 document.getElementById('samples').addEventListener('input', event => {
   config.samples_threshold = Number(event.target.value);
   sendConfig();
-})
+});
 document.getElementById('playback').addEventListener('input', event => {
   config.playback_speed = Number(event.target.value);
   document.getElementById('playback-val').value = event.target.value + "x";
   sendConfig();
-})
+});
 document.getElementById('silence').addEventListener('input', event => {
   config.silence_speed = Number(event.target.value);
   document.getElementById('silence-val').value = event.target.value + "x";
   sendConfig();
-})
+});
+document.getElementById('reset-btn').addEventListener('click', event => {
+  config = Object.assign({}, CONFIG_DEFAULTS);
+  sendConfig();
+  timeSaved = 0;
+  volume = 0;
+  isSpedUp = false;
+  updatePageInputs();
+});
+
+const getMousePos = (canvas, evt) => {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: evt.clientX - rect.left,
+    y: evt.clientY - rect.top
+  };
+}
+
+canvas_element.addEventListener('mousedown', function(e) {
+  const {x, y} = getMousePos(canvas_element, e);
+  config.threshold = Number(canvasScale*x-OFFSET);
+  sendConfig();
+});
 
 requestConfig();
 

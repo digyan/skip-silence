@@ -20,7 +20,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     chrome.pageAction.setIcon({
       tabId: sender.tab.id,
       path: "icons/icon-32.png"
-    }, () => {})
+    }, () => {});
   } 
   else if (msg.command === 'disable') {
     console.log('Disable extension for tab', sender.tab.id);
@@ -31,6 +31,20 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     chrome.pageAction.setIcon({
       tabId: sender.tab.id,
       path: "icons/disabled.png"
-    }, () => {})
+    }, () => {});
+  }
+  else if (msg.command === "enable-rt") {
+    // Set icon to enabled version
+    chrome.pageAction.setIcon({
+      tabId: sender.tab.id,
+      path: "icons/enabled-32.png"
+    }, () => {});
+  }
+  else if (msg.command === "disable-rt") {
+    // Set icon back to colored version
+    chrome.pageAction.setIcon({
+      tabId: sender.tab.id,
+      path: "icons/icon-32.png"
+    }, () => {});
   }
 });
