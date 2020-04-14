@@ -18,6 +18,7 @@ const CONFIG_DEFAULTS = { // this is 'client' default values
   silence_speed: 3,
   enabled: false,
   timeSaved: 0,
+  timeSavedAllTime: 0,
 }
 let config = Object.assign({}, CONFIG_DEFAULTS);
 let volume = 0;
@@ -85,15 +86,14 @@ var toHHMMSS = (secs) => {
       .join(":")
 }
 
-let timeSaved = 0;
 // Update the page input elements to reflect the current config
 const updatePageInputs = () => {
   document.getElementById('enable-toggle').checked = config.enabled;
   document.getElementById('samples').value = config.samples_threshold;
   document.getElementById('playback').value = config.playback_speed;
   document.getElementById('silence').value = config.silence_speed;
-  document.getElementById('timesaved-val').innerHTML = toHHMMSS(timeSaved);
-  document.getElementById('alltime-timesaved-val').innerHTML = toHHMMSS(config.timeSaved);
+  document.getElementById('timesaved-val').innerHTML = toHHMMSS(config.timeSaved);
+  document.getElementById('alltime-timesaved-val').innerHTML = toHHMMSS(config.timeSavedAllTime);
   document.getElementById('playback-val').value = config.playback_speed + "x";
   document.getElementById('silence-val').value = config.silence_speed + "x";
 }
@@ -108,10 +108,10 @@ chrome.runtime.onMessage.addListener(msg => {
     isSpedUp = true;
   } else if (msg.command === 'down') {
     isSpedUp = false;
-    timeSaved += msg.data;
-    config.timeSaved += msg.data;
-    document.getElementById('timesaved-val').innerHTML = toHHMMSS(timeSaved);
-    document.getElementById('alltime-timesaved-val').innerHTML = toHHMMSS(config.timeSaved);
+    config.timeSaved = msg.data[0];
+    config.timeSavedAllTime = msg.data[1];
+    document.getElementById('timesaved-val').innerHTML = toHHMMSS(config.timeSaved);
+    document.getElementById('alltime-timesaved-val').innerHTML = toHHMMSS(config.timeSavedAllTime);
   }
 });
 
@@ -143,7 +143,6 @@ document.getElementById('silence').addEventListener('input', event => {
 document.getElementById('reset-btn').addEventListener('click', event => {
   config = Object.assign({}, CONFIG_DEFAULTS);
   sendConfig();
-  timeSaved = 0;
   volume = 0;
   isSpedUp = false;
   updatePageInputs();

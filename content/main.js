@@ -21,6 +21,7 @@ const CONFIG_DEFAULTS = {
   silence_speed: 3,
   enabled: false,
   timeSaved: 0,
+  timeSavedAllTime: 0,
 }
 let config = Object.assign({}, CONFIG_DEFAULTS);;
 
@@ -129,7 +130,9 @@ const prepareExtension = () => {
         element.playbackRate = config.playback_speed;
         isSpedUp = false;
         let timeSaved = (audio.currentTime - prevTime) * (1/config.playback_speed - 1/config.silence_speed);
-        chrome.runtime.sendMessage({ command: 'down', data: timeSaved }); 
+        config.timeSaved += timeSaved;
+        config.timeSavedAllTime += timeSaved;
+        chrome.runtime.sendMessage({ command: 'down', data: [config.timeSaved, config.timeSavedAllTime] }); 
       }
       samplesUnderThreshold = 0;
     }
