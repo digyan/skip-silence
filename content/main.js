@@ -90,6 +90,7 @@ const prepareExtension = () => {
   let isSpedUp = false; // Is the source currently sped up?
   let samplesUnderThreshold = 0; // Number of samples we have been under threshold
   let prevTime = 0;
+  config.timeSaved = 0;
   const run = () => {
     if (!config.enabled) return;
 
